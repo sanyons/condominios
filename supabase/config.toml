@@ -1,0 +1,12 @@
+# Configuración mínima de Supabase CLI (desarrollo local con `supabase start`).
+project_id = "condominios"
+
+[api]
+schemas = ["public"]
+
+[db]
+major_version = 15
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/confirm"]
