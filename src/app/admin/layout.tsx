@@ -40,6 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </NavEnlace>
             <NavEnlace href="/admin/ajustes">Configuración</NavEnlace>
             {ctx.esResidente && <NavEnlace href="/residente">Mi unidad</NavEnlace>}
+            <NavEnlace href="/onboarding">+ Agregar condominio</NavEnlace>
           </nav>
           <div className="mt-auto hidden items-center justify-between gap-2 border-t border-linea pt-4 lg:flex">
             <div className="min-w-0">

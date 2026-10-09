@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MarcoAuth } from "@/components/marco-auth";
 import { Aviso, type BuscarParams } from "@/components/aviso";
 import { obtenerContexto } from "@/lib/contexto";
@@ -11,9 +12,18 @@ const PROVINCIAS = ["San José", "Alajuela", "Cartago", "Heredia", "Guanacaste",
 export default async function Onboarding({ searchParams }: { searchParams: BuscarParams }) {
   const { error } = await searchParams;
   const ctx = await obtenerContexto();
+  const tieneCondominios = ctx.condominios.length > 0;
   return (
-    <MarcoAuth titulo="Registre su condominio">
-      {ctx.condominios.length === 0 && (
+    <MarcoAuth titulo={tieneCondominios ? "Agregar otro condominio" : "Registre su condominio"}>
+      {tieneCondominios && (
+        <p className="text-sm text-suave">
+          Quedará como administrador del nuevo condominio. Para cambiar entre condominios use el selector del menú.{" "}
+          <Link href="/" className="font-semibold text-marca">
+            Volver al panel
+          </Link>
+        </p>
+      )}
+      {!tieneCondominios && (
         <p className="text-sm text-suave">
           Si usted es residente, su administración debe invitarle por correo. Si administra un condominio, regístrelo aquí.
         </p>
