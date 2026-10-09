@@ -47,8 +47,8 @@ permisos viven en la base de datos (`supabase/migrations`), protegidos con Row L
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | clave `anon` / publishable |
-   | `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` / secret (solo servidor) |
-   | `NEXT_PUBLIC_SITE_URL` | la URL final, p. ej. `https://condominios.vercel.app` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | clave secreta `sb_secret_…` (solo servidor) |
+   | `NEXT_PUBLIC_SITE_URL` | opcional: la URL definitiva cuando tenga dominio propio |
 3. *Deploy*. Cada push a `main` vuelve a publicar.
 
 ### 3. Primer uso

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { contextoAdmin } from "@/lib/contexto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { volverCon } from "@/lib/redirigir";
+import { origen } from "@/lib/origen";
 
 const RUTA = "/admin/unidades";
 
@@ -76,7 +77,7 @@ export async function invitarResidente(formData: FormData) {
   if (existente) {
     usuarioId = existente.id;
   } else {
-    const sitio = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const sitio = await origen();
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { nombre },
       redirectTo: `${sitio}/auth/confirm?next=/cuenta/clave`,

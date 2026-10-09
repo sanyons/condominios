@@ -1,15 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { volverCon } from "@/lib/redirigir";
-
-async function origen() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const h = await headers();
-  return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
-}
+import { origen } from "@/lib/origen";
 
 export async function iniciarSesion(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
