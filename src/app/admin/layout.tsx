@@ -8,11 +8,18 @@ import { cerrarSesion } from "@/app/(auth)/acciones";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
-  const { count: porRevisar } = await ctx.supabase
-    .from("pagos")
-    .select("id", { count: "exact", head: true })
-    .eq("condominio_id", ctx.condominioId)
-    .eq("estado", "en_revision");
+  const [{ count: porRevisar }, { count: porAprobar }] = await Promise.all([
+    ctx.supabase
+      .from("pagos")
+      .select("id", { count: "exact", head: true })
+      .eq("condominio_id", ctx.condominioId)
+      .eq("estado", "en_revision"),
+    ctx.supabase
+      .from("reservas")
+      .select("id", { count: "exact", head: true })
+      .eq("condominio_id", ctx.condominioId)
+      .eq("estado", "solicitada"),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
@@ -47,8 +54,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {t.nav.pagos}
               {!!porRevisar && <span className="pastilla tono-alerta ml-2">{porRevisar}</span>}
             </NavEnlace>
+            <NavEnlace href="/admin/amenidades">
+              {t.nav.amenidades}
+              {!!porAprobar && <span className="pastilla tono-alerta ml-2">{porAprobar}</span>}
+            </NavEnlace>
+            <NavEnlace href="/admin/documentos">{t.nav.documentos}</NavEnlace>
+            <NavEnlace href="/admin/calendario">{t.nav.calendario}</NavEnlace>
             <NavEnlace href="/admin/ajustes">{t.nav.ajustes}</NavEnlace>
             {ctx.esResidente && <NavEnlace href="/residente">{t.nav.miUnidad}</NavEnlace>}
+            {ctx.propiedades > 0 && (ctx.propiedades > 1 || !ctx.esResidente) && (
+              <NavEnlace href="/residente/propiedades">{t.propiedades.enlace(ctx.propiedades)}</NavEnlace>
+            )}
           </nav>
           <div className="mt-auto hidden flex-col gap-4 border-t border-linea pt-4 lg:flex">
             <Preferencias />

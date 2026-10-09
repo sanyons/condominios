@@ -42,6 +42,8 @@ export function formatos(t: Dict) {
 /** Mensaje legible a partir de un error de Supabase/Postgres, en el idioma actual. */
 export function mensajeError(e: unknown, t?: Dict) {
   const msg = (e as { message?: string })?.message ?? String(e);
+  if (msg.includes("exclusion constraint") || msg.includes("conflicting key value"))
+    return t?.errores.traslape ?? "Ese horario ya está reservado. Elija otro.";
   if (msg.includes("duplicate key")) return t?.errores.duplicado ?? "Ya existe un registro con esos datos.";
   if (msg.includes("row-level security")) return t?.errores.sinPermiso ?? "No tiene permiso para esta acción.";
   return t?.errores.db[msg] ?? msg;

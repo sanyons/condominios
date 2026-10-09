@@ -23,13 +23,15 @@ export async function obtenerContexto() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: perfil }, { data: filas }] = await Promise.all([
+  const [{ data: perfil }, { data: filas }, { count: propiedades }] = await Promise.all([
     supabase.from("usuarios").select("id, nombre, apellidos, email").eq("id", user.id).maybeSingle(),
     supabase
       .from("membresias")
       .select("condominio_id, rol, condominios(nombre)")
       .eq("usuario_id", user.id)
       .eq("activo", true),
+    // Unidades de la persona en todos sus condominios (dueños de varias propiedades)
+    supabase.from("unidad_personas").select("unidad_id", { count: "exact", head: true }).eq("usuario_id", user.id),
   ]);
 
   const membresias: Membresia[] = (filas ?? []).map((m: any) => ({
@@ -56,6 +58,7 @@ export async function obtenerContexto() {
     user,
     perfil,
     condominiosAdmin,
+    propiedades: propiedades ?? 0,
     condominioId,
     condominioNombre: condominios.find((c) => c.id === condominioId)?.nombre ?? "",
     condominios,

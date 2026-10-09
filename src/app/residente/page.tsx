@@ -4,6 +4,8 @@ import { contextoResidente } from "@/lib/contexto";
 import { dic } from "@/lib/i18n";
 import { Aviso, type BuscarParams } from "@/components/aviso";
 import { formatos } from "@/lib/formato";
+import { diaCR, fechaCorta, isoCR } from "@/lib/fechas";
+import { detalleEvento, type Evento } from "@/lib/calendario";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await dic()).nav.inicio };
@@ -25,7 +27,7 @@ export default async function InicioResidente({ searchParams }: { searchParams: 
     return <p className="tarjeta text-sm text-suave">{t.residente.sinVinculo}</p>;
   }
 
-  const [{ data: estado }, { data: cargos }, { data: pagos }, { data: condo }] = await Promise.all([
+  const [{ data: estado }, { data: cargos }, { data: pagos }, { data: condo }, { data: eventos }] = await Promise.all([
     ctx.supabase.from("v_estado_cuenta_unidad").select("*").in("unidad_id", ids),
     ctx.supabase
       .from("cargos")
@@ -41,6 +43,13 @@ export default async function InicioResidente({ searchParams }: { searchParams: 
       .order("creado_en", { ascending: false })
       .limit(10),
     ctx.supabase.from("condominios").select("moneda_base").eq("id", ctx.condominioId).single(),
+    ctx.supabase
+      .from("eventos")
+      .select("id, titulo, descripcion, ubicacion, categoria, inicio, fin, todo_el_dia")
+      .eq("condominio_id", ctx.condominioId)
+      .gte("inicio", isoCR(diaCR(new Date())))
+      .order("inicio")
+      .limit(3),
   ]);
 
   const moneda = condo?.moneda_base ?? "CRC";
@@ -74,6 +83,30 @@ export default async function InicioResidente({ searchParams }: { searchParams: 
           {t.nav.reportarPago}
         </Link>
       </section>
+
+      {(eventos ?? []).length > 0 && (
+        <section aria-labelledby="h-fechas" className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 id="h-fechas" className="text-base font-bold">
+              {t.calendario.proximos}
+            </h2>
+            <Link href="/residente/calendario" className="text-sm font-semibold text-acento">
+              {t.comun.verTodos}
+            </Link>
+          </div>
+          <ul className="tarjeta flex flex-col divide-y divide-linea-suave p-0">
+            {((eventos ?? []) as Evento[]).map((e) => (
+              <li key={e.id} className="flex gap-3 px-4 py-3">
+                <span className="w-14 shrink-0 text-xs font-bold text-acento-fuerte capitalize">{fechaCorta(diaCR(e.inicio), t.locale)}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{e.titulo}</span>
+                  <span className="block text-xs text-suave">{detalleEvento(e, t)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="h-pend" className="flex flex-col gap-2.5">
         <h2 id="h-pend" className="text-base font-bold">
