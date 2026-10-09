@@ -73,15 +73,25 @@ export async function invitarResidente(formData: FormData) {
   let usuarioId: string | undefined;
   const { data: existente } = await admin.from("usuarios").select("id").eq("email", email).maybeSingle();
   let invitado = false;
-
-  if (existente) {
-    usuarioId = existente.id;
-  } else {
-    const sitio = await origen();
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+  let reenvioFallido = false;
+  const sitio = await origen();
+  const invitar = () =>
+    admin.auth.admin.inviteUserByEmail(email, {
       data: { nombre },
       redirectTo: `${sitio}/auth/confirm?next=/cuenta/clave`,
     });
+
+  if (existente) {
+    usuarioId = existente.id;
+    // Si nunca ha entrado (invitación anterior sin usar), se le reenvía el correo
+    const { data: cuenta } = await admin.auth.admin.getUserById(existente.id);
+    if (cuenta?.user && !cuenta.user.last_sign_in_at) {
+      const { error } = await invitar();
+      if (error) reenvioFallido = true;
+      else invitado = true;
+    }
+  } else {
+    const { data, error } = await invitar();
     if (error || !data.user) volverCon(RUTA, "error", error ?? "No se pudo enviar la invitación.");
     usuarioId = data.user.id;
     invitado = true;
@@ -102,5 +112,12 @@ export async function invitarResidente(formData: FormData) {
   if (e2) volverCon(RUTA, "error", e2);
 
   revalidatePath(RUTA);
+  if (reenvioFallido) {
+    volverCon(
+      RUTA,
+      "ok",
+      `${email} quedó vinculado, pero no se pudo reenviar el correo. Puede entrar con "¿Olvidó su contraseña?" en la pantalla de inicio.`
+    );
+  }
   volverCon(RUTA, "ok", invitado ? `Invitación enviada a ${email}.` : `${email} quedó vinculado a la unidad.`);
 }
