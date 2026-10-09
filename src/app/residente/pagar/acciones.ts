@@ -3,27 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { contextoResidente } from "@/lib/contexto";
 import { volverCon } from "@/lib/redirigir";
+import { dic } from "@/lib/i18n";
 
 const RUTA = "/residente/pagar";
 const TIPOS = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
 export async function reportarPago(formData: FormData) {
-  const ctx = await contextoResidente();
+  const [ctx, t] = await Promise.all([contextoResidente(), dic()]);
   const unidadId = String(formData.get("unidad_id") ?? "");
-  if (!ctx.unidades.some((u) => u.id === unidadId)) volverCon(RUTA, "error", "Unidad no válida.");
+  if (!ctx.unidades.some((u) => u.id === unidadId)) return volverCon(RUTA, "error", t.pagar.errUnidad);
 
   const monto = Number(formData.get("monto") ?? 0);
-  if (!(monto > 0)) volverCon(RUTA, "error", "Indique el monto pagado.");
+  if (!(monto > 0)) return volverCon(RUTA, "error", t.pagar.errMonto);
 
   let ruta: string | null = null;
   const archivo = formData.get("comprobante");
   if (archivo instanceof File && archivo.size > 0) {
-    if (archivo.size > 5 * 1024 * 1024) volverCon(RUTA, "error", "El comprobante no puede pesar más de 5 MB.");
-    if (!TIPOS.includes(archivo.type)) volverCon(RUTA, "error", "Suba una imagen (JPG, PNG) o un PDF.");
+    if (archivo.size > 5 * 1024 * 1024) return volverCon(RUTA, "error", t.pagar.errPeso);
+    if (!TIPOS.includes(archivo.type)) return volverCon(RUTA, "error", t.pagar.errTipo);
     const ext = archivo.name.split(".").pop()?.toLowerCase() || "jpg";
     ruta = `${ctx.condominioId}/${unidadId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await ctx.supabase.storage.from("comprobantes").upload(ruta, archivo, { contentType: archivo.type });
-    if (error) volverCon(RUTA, "error", `No se pudo subir el comprobante: ${error.message}`);
+    if (error) return volverCon(RUTA, "error", t.pagar.errSubir(error.message));
   }
 
   const { error } = await ctx.supabase.from("pagos").insert({
@@ -38,7 +39,7 @@ export async function reportarPago(formData: FormData) {
     comprobante_url: ruta,
     estado: "en_revision",
   });
-  if (error) volverCon(RUTA, "error", error);
+  if (error) return volverCon(RUTA, "error", error);
   revalidatePath("/residente");
-  volverCon("/residente", "ok", "Pago enviado. La administración lo revisará pronto.");
+  return volverCon("/residente", "ok", t.pagar.ok);
 }

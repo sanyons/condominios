@@ -5,11 +5,12 @@ import { contextoAdmin } from "@/lib/contexto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { volverCon } from "@/lib/redirigir";
 import { origen } from "@/lib/origen";
+import { dic } from "@/lib/i18n";
 
 const RUTA = "/admin/unidades";
 
 export async function crearUnidad(formData: FormData) {
-  const ctx = await contextoAdmin();
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
   const { error } = await ctx.supabase.from("unidades").insert({
     condominio_id: ctx.condominioId,
     codigo: String(formData.get("codigo") ?? "").trim(),
@@ -19,20 +20,20 @@ export async function crearUnidad(formData: FormData) {
     area_m2: formData.get("area_m2") ? Number(formData.get("area_m2")) : null,
     cuota_fija: formData.get("cuota_fija") ? Number(formData.get("cuota_fija")) : null,
   });
-  if (error) volverCon(RUTA, "error", error);
+  if (error) return volverCon(RUTA, "error", error);
   revalidatePath(RUTA);
-  volverCon(RUTA, "ok", "Unidad agregada.");
+  return volverCon(RUTA, "ok", t.unidades.okUnidad);
 }
 
 /** Importa líneas "codigo,coeficiente,area_m2" (copiadas de Excel). */
 export async function importarUnidades(formData: FormData) {
-  const ctx = await contextoAdmin();
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
   const texto = String(formData.get("lineas") ?? "");
   const filas = texto
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
-    .filter((l) => !/^c[oó]digo/i.test(l))
+    .filter((l) => !/^(c[oó]digo|code)/i.test(l))
     .map((l) => l.split(/[,;\t]/).map((c) => c.trim()))
     .map(([codigo, coef, area]) => ({
       condominio_id: ctx.condominioId,
@@ -41,17 +42,17 @@ export async function importarUnidades(formData: FormData) {
       area_m2: area ? Number(area.replace(",", ".")) : null,
     }))
     .filter((f) => f.codigo);
-  if (filas.length === 0) volverCon(RUTA, "error", "No se encontraron filas válidas.");
+  if (filas.length === 0) return volverCon(RUTA, "error", t.unidades.errSinFilas);
   const { error } = await ctx.supabase.from("unidades").insert(filas);
-  if (error) volverCon(RUTA, "error", error);
+  if (error) return volverCon(RUTA, "error", error);
   revalidatePath(RUTA);
-  volverCon(RUTA, "ok", `${filas.length} unidades importadas.`);
+  return volverCon(RUTA, "ok", t.unidades.okImportadas(filas.length));
 }
 
 /** Invita a una persona por correo y la vincula a una unidad. */
 export async function invitarResidente(formData: FormData) {
-  const ctx = await contextoAdmin();
-  if (!ctx.roles.includes("administrador")) volverCon(RUTA, "error", "Solo la administración puede invitar residentes.");
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
+  if (!ctx.roles.includes("administrador")) return volverCon(RUTA, "error", t.unidades.errSoloAdmin);
 
   const unidadId = String(formData.get("unidad_id") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -67,10 +68,10 @@ export async function invitarResidente(formData: FormData) {
     .eq("id", unidadId)
     .eq("condominio_id", ctx.condominioId)
     .maybeSingle();
-  if (!unidad) volverCon(RUTA, "error", "Unidad no encontrada.");
+  if (!unidad) return volverCon(RUTA, "error", t.unidades.errUnidad);
 
   const admin = createAdminClient();
-  let usuarioId: string | undefined;
+  let usuarioId: string;
   const { data: existente } = await admin.from("usuarios").select("id").eq("email", email).maybeSingle();
   let invitado = false;
   let reenvioFallido = false;
@@ -92,7 +93,7 @@ export async function invitarResidente(formData: FormData) {
     }
   } else {
     const { data, error } = await invitar();
-    if (error || !data.user) volverCon(RUTA, "error", error ?? "No se pudo enviar la invitación.");
+    if (error || !data.user) return volverCon(RUTA, "error", error ?? t.unidades.errInvitacion);
     usuarioId = data.user.id;
     invitado = true;
   }
@@ -101,7 +102,7 @@ export async function invitarResidente(formData: FormData) {
     { unidad_id: unidadId, usuario_id: usuarioId, relacion, puede_votar: puedeVotar, es_responsable_pago: responsable },
     { onConflict: "unidad_id,usuario_id,relacion" }
   );
-  if (e1) volverCon(RUTA, "error", e1);
+  if (e1) return volverCon(RUTA, "error", e1);
 
   const { error: e2 } = await admin
     .from("membresias")
@@ -109,15 +110,9 @@ export async function invitarResidente(formData: FormData) {
       { usuario_id: usuarioId, condominio_id: ctx.condominioId, rol: "residente", activo: true },
       { onConflict: "usuario_id,condominio_id,rol" }
     );
-  if (e2) volverCon(RUTA, "error", e2);
+  if (e2) return volverCon(RUTA, "error", e2);
 
   revalidatePath(RUTA);
-  if (reenvioFallido) {
-    volverCon(
-      RUTA,
-      "ok",
-      `${email} quedó vinculado, pero no se pudo reenviar el correo. Puede entrar con "¿Olvidó su contraseña?" en la pantalla de inicio.`
-    );
-  }
-  volverCon(RUTA, "ok", invitado ? `Invitación enviada a ${email}.` : `${email} quedó vinculado a la unidad.`);
+  if (reenvioFallido) return volverCon(RUTA, "ok", t.unidades.okSinReenvio(email));
+  return volverCon(RUTA, "ok", invitado ? t.unidades.okInvitado(email) : t.unidades.okVinculado(email));
 }

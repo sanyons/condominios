@@ -3,29 +3,30 @@
 import { revalidatePath } from "next/cache";
 import { contextoAdmin } from "@/lib/contexto";
 import { volverCon } from "@/lib/redirigir";
+import { dic } from "@/lib/i18n";
 
 const RUTA = "/admin/pagos";
 
 export async function aprobarPago(formData: FormData) {
-  const ctx = await contextoAdmin();
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
   const { error } = await ctx.supabase.rpc("aplicar_pago", { p_pago: String(formData.get("pago_id") ?? "") });
-  if (error) volverCon(RUTA, "error", error);
+  if (error) return volverCon(RUTA, "error", error);
   revalidatePath("/admin", "layout");
-  volverCon(RUTA, "ok", "Pago aprobado y aplicado al estado de cuenta.");
+  return volverCon(RUTA, "ok", t.pagos.okAprobado);
 }
 
 export async function rechazarPago(formData: FormData) {
-  const ctx = await contextoAdmin();
-  const motivo = String(formData.get("motivo") ?? "").trim() || "Comprobante no válido";
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
+  const motivo = String(formData.get("motivo") ?? "").trim() || t.pagos.motivoPorDefecto;
   const { error } = await ctx.supabase.rpc("rechazar_pago", { p_pago: String(formData.get("pago_id") ?? ""), p_motivo: motivo });
-  if (error) volverCon(RUTA, "error", error);
+  if (error) return volverCon(RUTA, "error", error);
   revalidatePath("/admin", "layout");
-  volverCon(RUTA, "ok", "Pago rechazado. El residente verá el motivo.");
+  return volverCon(RUTA, "ok", t.pagos.okRechazado);
 }
 
 /** Pago recibido directamente por la administración (efectivo, depósito…). Se aplica de inmediato. */
 export async function registrarPago(formData: FormData) {
-  const ctx = await contextoAdmin();
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
   const { data, error } = await ctx.supabase
     .from("pagos")
     .insert({
@@ -40,9 +41,9 @@ export async function registrarPago(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error) volverCon(RUTA, "error", error);
+  if (error || !data) return volverCon(RUTA, "error", error);
   const { error: e2 } = await ctx.supabase.rpc("aplicar_pago", { p_pago: data.id });
-  if (e2) volverCon(RUTA, "error", e2);
+  if (e2) return volverCon(RUTA, "error", e2);
   revalidatePath("/admin", "layout");
-  volverCon(RUTA, "ok", "Pago registrado y aplicado.");
+  return volverCon(RUTA, "ok", t.pagos.okRegistrado);
 }

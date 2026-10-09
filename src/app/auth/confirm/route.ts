@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { dic } from "@/lib/i18n";
 
 /**
  * Destino de los enlaces de correo (confirmación, invitación, recuperación).
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     destino.pathname = type === "invite" || type === "recovery" ? "/cuenta/clave" : next;
   } else {
     destino.pathname = "/login";
-    destino.searchParams.set("error", "El enlace no es válido o ya expiró.");
+    destino.searchParams.set("error", (await dic()).auth.errEnlace);
   }
   return NextResponse.redirect(destino);
 }

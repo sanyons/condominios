@@ -1,13 +1,17 @@
+import type { Metadata } from "next";
 import { contextoAdmin } from "@/lib/contexto";
+import { dic } from "@/lib/i18n";
 import { Encabezado } from "@/components/encabezado";
 import { Aviso, type BuscarParams } from "@/components/aviso";
 import { guardarCondominio, agregarCuenta, desactivarCuenta } from "./acciones";
 
-export const metadata = { title: "Configuración" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await dic()).ajustes.titulo };
+}
 
 export default async function Ajustes({ searchParams }: { searchParams: BuscarParams }) {
   const { ok, error } = await searchParams;
-  const ctx = await contextoAdmin();
+  const [ctx, t] = await Promise.all([contextoAdmin(), dic()]);
   const esAdmin = ctx.roles.includes("administrador");
   const [{ data: c }, { data: cuentas }] = await Promise.all([
     ctx.supabase.from("condominios").select("*").eq("id", ctx.condominioId).single(),
@@ -16,50 +20,58 @@ export default async function Ajustes({ searchParams }: { searchParams: BuscarPa
 
   return (
     <>
-      <Encabezado titulo="Configuración" />
+      <Encabezado titulo={t.ajustes.titulo} />
       <Aviso ok={ok} error={error} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="tarjeta flex flex-col gap-4" aria-labelledby="h-datos">
           <h2 id="h-datos" className="text-lg font-bold">
-            Datos del condominio
+            {t.ajustes.datos}
           </h2>
           <form action={guardarCondominio} className="grid grid-cols-2 gap-3">
             <label className="etiqueta col-span-2">
-              Nombre
+              {t.comun.nombre}
               <input className="campo" name="nombre" defaultValue={c?.nombre} required />
             </label>
             <label className="etiqueta">
-              Cédula jurídica
+              {t.ajustes.cedula}
               <input className="campo" name="cedula_juridica" defaultValue={c?.cedula_juridica ?? ""} />
             </label>
             <label className="etiqueta">
-              Día de vencimiento
+              {t.ajustes.diaVencimiento}
               <input className="campo" type="number" name="dia_vencimiento" min={1} max={28} defaultValue={c?.dia_vencimiento} />
             </label>
             <label className="etiqueta">
-              Días de gracia
+              {t.ajustes.diasGracia}
               <input className="campo" type="number" name="dias_gracia" min={0} max={60} defaultValue={c?.dias_gracia} />
             </label>
             <label className="etiqueta">
-              Interés de mora (% mensual)
-              <input className="campo" type="number" name="tasa_mora_mensual" min={0} max={10} step="0.01" defaultValue={c?.tasa_mora_mensual} />
+              {t.ajustes.mora}
+              <input
+                className="campo"
+                type="number"
+                name="tasa_mora_mensual"
+                min={0}
+                max={10}
+                step="0.01"
+                defaultValue={c?.tasa_mora_mensual}
+              />
             </label>
             <label className="etiqueta col-span-2">
-              Dirección
+              {t.ajustes.direccion}
               <input className="campo" name="direccion" defaultValue={c?.direccion ?? ""} />
             </label>
             <button className="btn-primario col-span-2" disabled={!esAdmin}>
-              Guardar
+              {t.comun.guardar}
             </button>
           </form>
         </section>
 
         <section className="tarjeta flex flex-col gap-4" aria-labelledby="h-cuentas">
           <h2 id="h-cuentas" className="text-lg font-bold">
-            Cuentas para recibir pagos
+            {t.ajustes.cuentas}
           </h2>
           {(cuentas ?? []).length === 0 ? (
-            <p className="text-sm text-suave">Agregue al menos una cuenta o número SINPE Móvil.</p>
+            <p className="text-sm text-suave">{t.ajustes.sinCuentas}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {(cuentas ?? []).map((k: any) => (
@@ -73,7 +85,7 @@ export default async function Ajustes({ searchParams }: { searchParams: BuscarPa
                   </div>
                   <form action={desactivarCuenta}>
                     <input type="hidden" name="id" value={k.id} />
-                    <button className="text-sm font-semibold text-suave hover:text-peligro">Quitar</button>
+                    <button className="text-sm font-semibold text-suave hover:text-peligro">{t.comun.quitar}</button>
                   </form>
                 </li>
               ))}
@@ -81,14 +93,14 @@ export default async function Ajustes({ searchParams }: { searchParams: BuscarPa
           )}
           <form action={agregarCuenta} className="grid grid-cols-2 gap-3 border-t border-linea pt-4">
             <label className="etiqueta">
-              Banco
+              {t.ajustes.banco}
               <input className="campo" name="banco" required />
             </label>
             <label className="etiqueta">
-              Moneda
+              {t.comun.moneda}
               <select className="campo" name="moneda" defaultValue="CRC">
-                <option value="CRC">Colones</option>
-                <option value="USD">Dólares</option>
+                <option value="CRC">{t.comun.colones}</option>
+                <option value="USD">{t.comun.dolares}</option>
               </select>
             </label>
             <label className="etiqueta col-span-2">
@@ -100,10 +112,10 @@ export default async function Ajustes({ searchParams }: { searchParams: BuscarPa
               <input className="campo" name="sinpe_movil" inputMode="tel" />
             </label>
             <label className="etiqueta">
-              Titular
+              {t.ajustes.titular}
               <input className="campo" name="titular" defaultValue={c?.nombre} required />
             </label>
-            <button className="btn-secundario col-span-2">Agregar cuenta</button>
+            <button className="btn-secundario col-span-2">{t.ajustes.agregarCuenta}</button>
           </form>
         </section>
       </div>
