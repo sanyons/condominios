@@ -85,6 +85,20 @@ DO $$ BEGIN
   ASSERT (SELECT count(*) FROM public.auditoria) > 0, 'auditoría registrada';
 END $$;
 
+-- ---------- Resumen de cartera ----------
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', false);
+DO $$ BEGIN
+  ASSERT (SELECT count(*) FROM public.resumen_cartera('2026-09-01', '2026-10-01')) = 1, 'admin ve su condominio';
+  ASSERT (SELECT facturado FROM public.resumen_cartera('2026-09-01', '2026-10-01')) = 1000000, 'facturado de septiembre';
+  ASSERT (SELECT unidades_morosas FROM public.resumen_cartera('2026-09-01', '2026-10-01')) = 1, 'una unidad morosa';
+END $$;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b1', false);
+DO $$ BEGIN
+  ASSERT (SELECT count(*) FROM public.resumen_cartera('2026-09-01', '2026-10-01')) = 0, 'un residente no ve la cartera';
+END $$;
+RESET ROLE;
+
 -- ---------- Anónimo: no ve nada ni ejecuta reglas ----------
 RESET ROLE;
 SET ROLE anon;

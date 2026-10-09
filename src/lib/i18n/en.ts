@@ -36,6 +36,12 @@ export const en: Dict = {
     temaOscuro: "Dark",
     agregarCondominio: "Add community",
     cambiarCondominio: "Switch community",
+    buscarCondominio: "Search communities…",
+    recientes: "Recent",
+    todos: "All",
+    sinResultados: "No matching communities",
+    verCartera: "View all my communities",
+    atajo: "Ctrl K",
   },
 
   metodos: {
@@ -132,6 +138,7 @@ export const en: Dict = {
 
   nav: {
     menu: "Main menu",
+    cartera: "My communities",
     panel: "Dashboard",
     unidades: "Units and residents",
     cobros: "Fees and charges",
@@ -141,6 +148,41 @@ export const en: Dict = {
     administracion: "Management",
     inicio: "Home",
     reportarPago: "Report payment",
+  },
+
+  cartera: {
+    titulo: "My communities",
+    subtitulo: (n: number, mes: string) => `${n} communities · ${mes}`,
+    totales: "Portfolio totals",
+    recaudado: "Collected this month",
+    deFacturado: (pct: number, total: string) => `${pct}% of ${total} billed`,
+    mora: "Total overdue",
+    unidadesMorosas: (n: number, c: number) => `${n} units in ${c} communities`,
+    porRevisar: "Payments to review",
+    montoRevisar: (m: string, c: number) => `${m} across ${c} communities`,
+    otraMoneda: (m: string) => `Plus, in US dollars: ${m}`,
+    buscar: "Search by name",
+    aplicar: "Search",
+    filtro: "Show",
+    filtros: { todos: "All", revisar: "With payments to review", mora: "With overdue balances" },
+    ordenar: "Sort by",
+    ordenes: {
+      nombre: "Name",
+      mora: "Most overdue",
+      revisar: "Most payments to review",
+      recaudo: "Lowest collection",
+    },
+    colCondominio: "Community",
+    colUnidades: "Units",
+    colRecaudado: "Collected this month",
+    colMora: "Overdue",
+    colRevisar: "To review",
+    morosas: (n: number) => `${n} overdue`,
+    entrar: "Open",
+    revisarPagos: "Review payments",
+    alDia: "Up to date",
+    sinResultados: "No communities match your search or filter.",
+    mostrando: (n: number, total: number) => `Showing ${n} of ${total}`,
   },
 
   panel: {

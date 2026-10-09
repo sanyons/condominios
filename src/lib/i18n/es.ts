@@ -34,6 +34,12 @@ export const es = {
     temaOscuro: "Oscuro",
     agregarCondominio: "Agregar condominio",
     cambiarCondominio: "Cambiar de condominio",
+    buscarCondominio: "Buscar condominio…",
+    recientes: "Recientes",
+    todos: "Todos",
+    sinResultados: "Ningún condominio coincide",
+    verCartera: "Ver todos mis condominios",
+    atajo: "Ctrl K",
   },
 
   metodos: {
@@ -130,6 +136,7 @@ export const es = {
 
   nav: {
     menu: "Menú principal",
+    cartera: "Mis condominios",
     panel: "Panel",
     unidades: "Unidades y residentes",
     cobros: "Cuotas y cobros",
@@ -139,6 +146,41 @@ export const es = {
     administracion: "Administración",
     inicio: "Inicio",
     reportarPago: "Reportar pago",
+  },
+
+  cartera: {
+    titulo: "Mis condominios",
+    subtitulo: (n: number, mes: string) => `${n} condominios · ${mes}`,
+    totales: "Totales de la cartera",
+    recaudado: "Recaudado del mes",
+    deFacturado: (pct: number, total: string) => `${pct} % de ${total} facturado`,
+    mora: "Morosidad total",
+    unidadesMorosas: (n: number, c: number) => `${n} unidades en ${c} condominios`,
+    porRevisar: "Pagos por revisar",
+    montoRevisar: (m: string, c: number) => `${m} en ${c} condominios`,
+    otraMoneda: (m: string) => `Además, en dólares: ${m}`,
+    buscar: "Buscar por nombre",
+    aplicar: "Buscar",
+    filtro: "Mostrar",
+    filtros: { todos: "Todos", revisar: "Con pagos por revisar", mora: "Con morosidad" } as Record<string, string>,
+    ordenar: "Ordenar por",
+    ordenes: {
+      nombre: "Nombre",
+      mora: "Mayor morosidad",
+      revisar: "Más pagos por revisar",
+      recaudo: "Menor recaudación",
+    } as Record<string, string>,
+    colCondominio: "Condominio",
+    colUnidades: "Unidades",
+    colRecaudado: "Recaudado del mes",
+    colMora: "Morosidad",
+    colRevisar: "Por revisar",
+    morosas: (n: number) => `${n} morosas`,
+    entrar: "Entrar",
+    revisarPagos: "Revisar pagos",
+    alDia: "Al día",
+    sinResultados: "Ningún condominio coincide con la búsqueda o el filtro.",
+    mostrando: (n: number, total: number) => `Mostrando ${n} de ${total}`,
   },
 
   panel: {

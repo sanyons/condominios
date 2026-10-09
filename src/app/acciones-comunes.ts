@@ -25,10 +25,25 @@ async function regresar(): Promise<never> {
   redirect(destino.startsWith("/") && !destino.startsWith("//") ? destino : "/");
 }
 
+/** Ruta interna segura (evita redirecciones a otros sitios). */
+function rutaInterna(valor: unknown, porDefecto: string) {
+  const r = String(valor ?? "");
+  return r.startsWith("/") && !r.startsWith("//") ? r : porDefecto;
+}
+
 export async function elegirCondominio(formData: FormData) {
   const id = String(formData.get("condominio_id") ?? "");
-  (await cookies()).set("condo_id", id, { path: "/", httpOnly: true, sameSite: "lax", maxAge: UN_ANIO });
-  redirect("/");
+  const jar = await cookies();
+  jar.set("condo_id", id, { path: "/", httpOnly: true, sameSite: "lax", maxAge: UN_ANIO });
+  // Últimos 5 condominios abiertos, el más reciente primero
+  const previos = (jar.get("condos_recientes")?.value ?? "").split(",").filter((x) => x && x !== id);
+  jar.set("condos_recientes", [id, ...previos].slice(0, 5).join(","), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: UN_ANIO,
+  });
+  redirect(rutaInterna(formData.get("destino"), "/admin"));
 }
 
 export async function cambiarIdioma(formData: FormData) {

@@ -47,10 +47,15 @@ export async function obtenerContexto() {
     ([id, nombre]) => ({ id, nombre })
   );
 
+  const condominiosAdmin = new Set(
+    membresias.filter((m) => ROLES_ADMIN.includes(m.rol) || m.rol === "super_admin").map((m) => m.condominio_id)
+  ).size;
+
   return {
     supabase,
     user,
     perfil,
+    condominiosAdmin,
     condominioId,
     condominioNombre: condominios.find((c) => c.id === condominioId)?.nombre ?? "",
     condominios,

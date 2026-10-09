@@ -34,8 +34,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             actual={ctx.condominioId}
             condominios={ctx.condominios}
             puedeAgregar={ctx.roles.includes("administrador")}
+            mostrarCartera={ctx.condominiosAdmin > 1}
           />
           <nav aria-label={t.nav.menu} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:flex-col lg:overflow-visible">
+            {ctx.condominiosAdmin > 1 && <NavEnlace href="/admin/condominios">{t.nav.cartera}</NavEnlace>}
             <NavEnlace href="/admin" exacto>
               {t.nav.panel}
             </NavEnlace>
